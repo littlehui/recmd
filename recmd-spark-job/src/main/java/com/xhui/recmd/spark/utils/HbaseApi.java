@@ -1,0 +1,378 @@
+package com.xhui.recmd.spark.utils;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.*;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.CompareFilter;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueExcludeFilter;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+public class HbaseApi implements Serializable {
+
+    static Logger logger = LoggerFactory.getLogger(HbaseApi.class);
+
+    private static Configuration conf = null;
+
+    private static Admin admin = null;
+
+    private static Connection connection = null;
+
+    static {
+        conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.quorum", "10.5.117.151,10.5.117.152");
+        conf.set("hbase.rootdir", "hdfs://10.5.117.109:9000/hbase");
+        conf.set("hbase.master", "10.5.117.109:16000");
+        try {
+            connection = ConnectionFactory.createConnection(conf);
+            admin = connection.getAdmin();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public HbaseApi() {
+
+    }
+
+    public HbaseApi(String host) {
+        conf = HBaseConfiguration.create();
+        conf.set("hbase.zookeeper.quorum", host);
+        //conf.set("hbase.zookeeper.quorum", "10.5.117.151,10.5.117.152");
+        conf.set("hbase.rootdir", "hdfs://10.5.117.109:9000/hbase");
+        conf.set("hbase.master", "10.5.117.109:16000");
+        //conf.set("zookeeper.znode.parent", "/hbase");
+        try {
+            connection = ConnectionFactory.createConnection(conf);
+            admin = connection.getAdmin();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //conf.set("hbase.zookeeper.property.clientPort", "2181");
+    }
+
+    /**
+     * 创建命名空间
+     *
+     * @param spaceName
+     */
+    public static void createNameSpace(String spaceName) {
+        try {
+            admin.createNamespace(NamespaceDescriptor.create(spaceName).build());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 测试表存不存在
+     *
+     * @param tableName 表名
+     * @return
+     * @throws IOException
+     */
+    public static boolean isTableExists(String tableName) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            logger.info("methods:isTableExists tableName:" + tname.toString());
+            boolean isExists = admin.tableExists(tname);
+            logger.info("methods:isTableExists end" + isExists);
+            return isExists;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.info(e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 建表   需要表名和列簇
+     *
+     * @param tableName     表名
+     * @param columsFamilys 列簇
+     * @throws IOException
+     */
+    public static void createTable(String tableName, String[] columsFamilys) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            if (admin.tableExists(tname)) {
+                logger.debug("表：" + tableName + "已经存在！");
+            } else {
+                TableName tablename = TableName.valueOf(tableName);
+                //新建表描述 HTableDescriptor admin.getTableDescriptor ()
+                HTableDescriptor tableDesc = new HTableDescriptor(tablename);
+                //往表描述里面加列描述HColumnDescriptor
+                for (String colum : columsFamilys) {
+                    //可以通过 HColumnDescriptor 对象设置 列族的特性 ，
+                    //比如：通过hcd.setTimeToLive(5184000) 设置数据保存的最长时间；
+                    //通过 hcd.setInMemory(true ) 设置数据保存在内存中以提高响应速度；
+                    //通过   hcd .setMaxVersions(10) 设置数据保存的最大版本数；
+                    //通过 hcd.setMinVersions(5) 设置数据保存的最小版本数（配合TimeToLive使用）。更多特性请自行查阅官网API；
+                    tableDesc.addFamily(new HColumnDescriptor(colum));
+                }
+                //ASYNC_WAL ： 当数据变动时，异步写WAL日志
+                //SYNC_WAL ： 当数据变动时，同步写WAL日志
+                //FSYNC_WAL ： 当数据变动时，同步写WAL日志，并且，强制将数据写入磁盘
+                //SKIP_WAL ： 不写WAL日志
+                //USE_DEFAULT ： 使用HBase全局默认的WAL写入级别，即 SYNC_WA
+                //发送一个请求,等待返回,然后再发送下一个请求
+                tableDesc.setDurability(Durability.SYNC_WAL);
+                //建表
+                //通过tableDesc.setMaxFileSize(512) 设置一个region中的store文件的最大size，
+                //当一个region中的最大store文件达到这个size时，region就开始分裂；
+                //通过tableDesc.setMemStoreFlushSize(512) 设置region内存中的memstore的最大值，
+                //当memstore达到这个值时，开始往磁盘中刷数据。 更多特性请自行查阅官网API
+                admin.createTable(tableDesc);
+                logger.debug("表：" + tableName + "创建成功!");
+            }
+        } catch (NamespaceNotFoundException e) {
+            System.out.println("指定的命名空间：" + tableName.split(":")[0] + " 不存在");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 删除表
+     *
+     * @param tableName 表名
+     */
+    public static void dropTable(String tableName) {
+        TableName tname = TableName.valueOf(tableName);
+        try {
+            if (admin.tableExists(tname)) {
+                // 关闭一个表
+                admin.disableTable(tname);
+                admin.deleteTable(tname);
+                System.out.println("删除表 " + tableName + "成功！");
+            } else {
+                System.out.println("删除的表 " + tableName + "不存在！");
+                System.exit(0);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 插入行
+     *
+     * @param tableName   表名
+     * @param rowKey      行键
+     * @param columFamily 列簇
+     * @param colum       列
+     * @param value       值
+     * @throws IOException
+     */
+    public static void addRow(String tableName, String rowKey, String columFamily,
+                       String colum, String value) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            //新建Put实例，并指定
+            Put put = new Put(Bytes.toBytes(rowKey));
+            // 参数分别:列族、列、值
+            put.addColumn(Bytes.toBytes(columFamily), Bytes.toBytes(colum), Bytes.toBytes(value));
+            table.put(put);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 删除一行
+     *
+     * @param tableName 表名
+     * @param row       行键
+     * @throws Exception
+     */
+    public static void delRow(String tableName, String row) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            Delete del = new Delete(Bytes.toBytes(row));
+            table.delete(del);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 删除多行
+     *
+     * @param tableName 表名
+     * @param rows      行键
+     * @throws Exception
+     */
+    public static void delMultiRows(String tableName, String[] rows) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            List<Delete> delList = new ArrayList<Delete>();
+            for (String row : rows) {
+                Delete del = new Delete(Bytes.toBytes(row));
+                delList.add(del);
+            }
+            table.delete(delList);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取一条数据
+     *
+     * @param tableName 表名
+     * @param row       行键
+     * @throws Exception
+     */
+    public static Cell[] getRow(String tableName, String row) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            Get get = new Get(Bytes.toBytes(row));
+            Result result = table.get(get);
+            // 获取每个cell并遍历
+/*            for (Cell cell : result.rawCells()) {
+
+                System.out.print("行键:" + new String(CellUtil.cloneRow(cell)));
+                System.out.print("时间戳:" + cell.getTimestamp() + " ");
+                System.out.print("列族名:" + new String(CellUtil.cloneFamily(cell)) + " ");
+                System.out.print("列名:" + new String(CellUtil.cloneQualifier(cell)) + " ");
+                System.out.println("值:" + new String(CellUtil.cloneValue(cell)));
+            }*/
+            return result.rawCells();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 获取所有数据
+     *
+     * @param tableName 表名
+     * @throws Exception
+     */
+
+    public static ResultScanner getAllRows(String tableName) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            Scan scan = new Scan();
+            ResultScanner results = table.getScanner(scan);
+/*            for (Result result : results) {
+                for (Cell cell : result.rawCells()) {
+                    System.out.print("行键:" + new String(CellUtil.cloneRow(cell)) + " ");
+                    System.out.print("时间戳:" + cell.getTimestamp() + " ");
+                    System.out.print("列族名:" + new String(CellUtil.cloneFamily(cell)) + " ");
+                    System.out.print("列名:" + new String(CellUtil.cloneQualifier(cell)) + " ");
+                    System.out.println("值:" + new String(CellUtil.cloneValue(cell)));
+                }
+            }*/
+            return results;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static ResultScanner scanByColumn(String tableName, String familier, String qualifier) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            //获取table实例
+            Table table = connection.getTable(tname);
+            Scan scan = new Scan();
+            Filter singleColumnValueFilter = new SingleColumnValueFilter(Bytes.toBytes(familier), Bytes.toBytes(qualifier), CompareFilter.CompareOp.NO_OP, Bytes.toBytes(new Double(10.289892323987287)));
+            scan.setFilter(singleColumnValueFilter);
+            ResultScanner results = table.getScanner(scan);
+            return results;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    /**
+     * 删除指定数据
+     * <p>
+     * columns为空, 删除指定列族的全部数据;
+     * family为空时, 删除指定行键的全部数据;
+     * </p>
+     *# 调用示例
+     deleteData("blog", "rk12", "author", new String[] { "name", "school" });
+     deleteData("blog", "rk11", "author", new String[] { "name" });
+     deleteData("blog", "rk10", "author", null);
+     deleteData("blog", "rk9", null, null);
+     * @param tableName 表名
+     * @param rowKey    行键
+     * @param family    列族
+     * @param columns   列集合
+     *
+     * @throws IOException
+     */
+    public static void deleteData(String tableName, String rowKey, String family, String[] columns) {
+        try {
+            TableName tname = TableName.valueOf(tableName);
+            Table table = connection.getTable(tname);
+            Delete delete = new Delete(Bytes.toBytes(rowKey));
+            if (null != family && !"".equals(family)) {
+                if (null != columns && columns.length > 0) { // 删除指定列
+                    for (String column : columns) {
+                        delete.addColumn(Bytes.toBytes(family), Bytes.toBytes(column));
+                    }
+                } else { // 删除指定列族
+                    delete.addFamily(Bytes.toBytes(family));
+                }
+            } else { // 删除指定行
+                // empty, nothing to do
+            }
+            table.delete(delete);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 创建 Admin 对象时就已经建立了客户端程序与HBase集群的connection ，
+     * 所以在程序执行完成后，务必通过 admin.close() 关闭connection
+     */
+    public static void closed() {
+        try {
+            connection.close();
+            admin.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void main(String[] args) {
+        //hbaseApi.getAllRows("visitCount");
+        //HbaseApi.dropTable("visitCount");
+        //HbaseApi.createTable("classifier", new String[]{"ipClass"});
+        //HbaseApi.dropTable("classifier");
+        //HbaseApi.createTable("classifier", new String[]{"ipClass"});
+        //hbaseApi.addRow("visitCount", "javaTests3", "count", "commodityCode", "24241241");
+        //hbaseApi.addRow("visitCount", "javaTests3", "count", "fat", "24241241");
+        ResultScanner resultScanner = scanByColumn("classifier", "ipClass", "221.204.7.163");
+        for (Result result : resultScanner) {
+            System.out.print(result);
+        }
+        System.out.print(resultScanner);
+    }
+}
