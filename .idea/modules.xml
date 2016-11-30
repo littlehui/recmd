@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/recmd.iml" filepath="$PROJECT_DIR$/recmd.iml" />
+      <module fileurl="file://$PROJECT_DIR$/recmd-core/recmd-core.iml" filepath="$PROJECT_DIR$/recmd-core/recmd-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/recmd-spark-job/recmd-spark-job.iml" filepath="$PROJECT_DIR$/recmd-spark-job/recmd-spark-job.iml" />
+      <module fileurl="file://$PROJECT_DIR$/recmd-web/recmd-web.iml" filepath="$PROJECT_DIR$/recmd-web/recmd-web.iml" />
+    </modules>
+  </component>
+</project>

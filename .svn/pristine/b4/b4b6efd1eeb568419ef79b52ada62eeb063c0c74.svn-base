@@ -1,0 +1,50 @@
+<?page title="推荐后台 0.1" contentType="text/html;charset=UTF-8"?>
+<zk>
+    <window title="" id="indexWin" border="" apply="com.xhui.recmd.zk.composer.IndexComposer"
+            position="center" droppable="true" vflex="1" hflex="1">
+        <borderlayout vflex="1" hflex="1">
+            <north title="" minsize="300" size="7%" height="70px">
+                <toolbar vflex="1" hflex="1">
+                    <hbox>
+                        <label value="简易后台" style="font-size:40px; font-weight:900"/>
+                        <hbox top="70%" width="100%" widths="30%,50%,20%">
+                        </hbox>
+                    </hbox>
+                </toolbar>
+            </north>
+            <center title="" style="filter:alpha(opacity=50)">
+                <borderlayout vflex="1" hflex="1">
+                    <west size="50%">
+                        <borderlayout vflex="1" hflex="1">
+                            <west vflex="1" size="50%">
+                                <include src="/zul/visitCountList.zul"></include>
+                            </west>
+
+                            <east vflex="1" size="50%">
+                                <include id="classifierListInclude" src="/zul/classifierList.zul"></include>
+                            </east>
+                        </borderlayout>
+                    </west>
+                    <east size="50%">
+                        <borderlayout hflex="1" vflex="1">
+                            <west size="50%">
+                                <include src="/zul/ipToIpdisList.zul"></include>
+                            </west>
+                            <east vflex="1" size="50%">
+                                <include src="/zul/recmdList.zul"></include>
+                            </east>
+                        </borderlayout>
+                    </east>
+                </borderlayout>
+            </center>
+<!--            <south title="">
+                <div vflex="1" hflex="1">
+                    <label value=""
+                           style="color:black;font-size:20px"/>
+                </div>
+            </south>-->
+        </borderlayout>
+        <panel>
+        </panel>
+    </window>
+</zk>

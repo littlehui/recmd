@@ -1,0 +1,28 @@
+<zk>
+    <window id="recmdListWin" title="最终推荐结果"
+            apply="com.xhui.recmd.zk.composer.RecmdComposer">
+        <panel>
+            <panelchildren>
+                <toolbar>
+                    <textbox id="searchBox"></textbox>
+                    <button id="searchButton" label="查询"></button>
+                </toolbar>
+                <listbox id="recmdListbox" mold="paging" visible="true" multiple="true">
+                    <listhead>
+                        <listheader label="推荐资源"></listheader>
+                        <listheader label="推测兴趣指数"></listheader>
+                    </listhead>
+                    <template name="model">
+                        <listitem value="${each}">
+                            <listcell label="${each.recmdResource}">
+                            </listcell>
+                            <listcell>
+                                <label value="${each.recmdValue}"></label>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>

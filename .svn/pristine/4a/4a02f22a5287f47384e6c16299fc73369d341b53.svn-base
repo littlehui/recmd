@@ -1,0 +1,77 @@
+package com.xhui.recmd.core.redis.rao;
+
+import com.xhui.recmd.core.redis.RedisTemplate;
+import com.xhui.recmd.core.union.ColumnGoal;
+import com.xhui.recmd.core.union.IndividualCommonPoint;
+import com.xhui.recmd.spark.utils.HbaseApi;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
+import org.apache.log4j.Logger;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Created by littlehui on 2016/11/18.
+ */
+public class IpToIpDisRao {
+
+    Logger logger = Logger.getLogger(IpToIpDisRao.class);
+
+    private RedisTemplate redisTemplate = RedisTemplate.getInstans();
+
+    private static IpToIpDisRao ipToIpDisRao;
+
+    private String KEY_PREFIX = "ipToIpDis_";
+
+    private IpToIpDisRao() {
+
+    }
+
+    public static IpToIpDisRao getInstance() {
+        if (ipToIpDisRao != null) {
+            return ipToIpDisRao;
+        } else {
+            return new IpToIpDisRao();
+        }
+    }
+
+    public void addToHbase(IndividualCommonPoint individualInterestPoint) {
+        Long startTimeMills = System.currentTimeMillis();
+        //logger.info("addToHbase value 开始时间：" + new Date(startTimeMills));
+        redisTemplate.set(KEY_PREFIX + individualInterestPoint.getIp(), individualInterestPoint, 360);
+/*
+        List<ColumnGoal> columnGoals = individualInterestPoint.getColumnGoals();
+        if (columnGoals != null && columnGoals.size() > 0) {
+            for (ColumnGoal columnGoal : columnGoals) {
+                HbaseApi.addRow(IP_TO_IP_DIS_TABLE, individualInterestPoint.getIp() + "", "ip", columnGoal.getColumn(), columnGoal.getGoal() + "");
+            }
+        }*/
+       // logger.info("addToHbase value 耗时：" + (System.currentTimeMillis() - startTimeMills)/1000 + "秒" + "c插入行数：" + individualInterestPoint.size());
+    }
+
+    public IndividualCommonPoint getByIP(String ip) {
+        Map<String, Double> ipToIpMaps = redisTemplate.get(KEY_PREFIX + ip, HashMap.class);
+        if (ipToIpMaps != null) {
+            IndividualCommonPoint cachedPoint = new IndividualCommonPoint();
+            for (Object column : ipToIpMaps.keySet()) {
+                cachedPoint.put((String)column, (Double)ipToIpMaps.get(column));
+            }
+            cachedPoint.setIp(ip);
+            return cachedPoint;
+        }
+/*        Cell[] cells = HbaseApi.getRow(IP_TO_IP_DIS_TABLE, ip);
+        if (cells != null && cells.length > 0) {
+            for (Cell cell : cells) {
+                String valueStr = new String(CellUtil.cloneValue(cell));
+                Double value = new Double(valueStr);
+                ColumnGoal columnGoal = new ColumnGoal(new String(CellUtil.cloneQualifier(cell)) + "", value);
+                individualInterestPoint.addColumnGoal(columnGoal);
+                individualInterestPoint.setIp(new String(CellUtil.cloneRow(cell)));
+            }
+        }*/
+        return null;
+    }
+}

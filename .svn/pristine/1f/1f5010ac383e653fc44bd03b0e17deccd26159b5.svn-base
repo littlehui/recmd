@@ -1,0 +1,17 @@
+##db≤ø∑÷≈‰÷√
+db.driverClass=com.mysql.jdbc.Driver
+db.url=jdbc:mysql://10.5.102.42:3317/gametrade?autoReconnect=true&amp;zeroDateTimeBehavior=convertToNull&amp;useUnicode=true&amp;characterEncoding=utf-8
+##&zeroDateTimeBehavior=convertToNull
+db.user=gametrade
+db.password=gametrade
+
+
+##druid datasource
+db.initialSize=5
+db.minIdle=1
+db.maxActive=100
+db.maxWait=60000
+db.timeBetweenEvictionRunsMillis=60000
+db.minEvictableIdleTimeMillis=300000
+db.removeAbandoned=true
+db.removeAbandonedTimeout=1800

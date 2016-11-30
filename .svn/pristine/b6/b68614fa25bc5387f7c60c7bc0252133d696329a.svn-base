@@ -1,0 +1,32 @@
+<zk>
+    <window id="visitCountListWin" title="IP兴趣度详情"
+            apply="com.xhui.recmd.zk.composer.VisitCountComposer">
+        <panel>
+            <panelchildren>
+                <toolbar>
+                    <textbox id="searchBox"></textbox>
+                    <button id="searchButton" label="查询"></button>
+                </toolbar>
+                <listbox id="visitCountListbox" mold="paging" visible="true" multiple="true">
+                    <listhead>
+                        <listheader label="访问IP"></listheader>
+                        <listheader label="访问资源源"></listheader>
+                        <listheader label="兴趣指数"></listheader>
+                    </listhead>
+                    <template name="model">
+                        <listitem value="${each}">
+                            <listcell>
+                                <label value="${each.ip}"></label>
+                            </listcell>
+                            <listcell label="${each.visitResource}">
+                            </listcell>
+                            <listcell>
+                                <label value="${each.visitValue}"></label>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>

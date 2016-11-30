@@ -1,0 +1,32 @@
+<zk>
+    <window id="ipToIpDisListWin" title="IP与IP距离详情"
+            apply="com.xhui.recmd.zk.composer.IpToIpDisComposer">
+        <panel>
+            <panelchildren>
+                <toolbar>
+                    <textbox id="searchBox"></textbox>
+                    <button id="searchButton" label="查询"></button>
+                </toolbar>
+                <listbox id="ipToIpListBox" mold="paging" visible="true" multiple="true">
+                    <listhead>
+                        <listheader label="源IP"></listheader>
+                        <listheader label="距离"></listheader>
+                        <listheader label="对象IP"></listheader>
+                    </listhead>
+                    <template name="model">
+                        <listitem value="${each}">
+                            <listcell>
+                                <label value="${each.srcIp}"></label>
+                            </listcell>
+                            <listcell label="${each.ipToIpDis}">
+                            </listcell>
+                            <listcell>
+                                <label value="${each.desIp}"></label>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>

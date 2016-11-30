@@ -1,0 +1,36 @@
+<zk>
+    <window id="classiferWin" title="分类详情"
+            apply="com.xhui.recmd.zk.composer.ClassifierComposer">
+        <panel>
+            <panelchildren>
+                <toolbar>
+                    <label value="IP:"></label>
+                    <textbox id="searchBox"></textbox>
+                    <button id="searchButton" label="查询"></button>
+                    <label value="分类ID"></label>
+                    <textbox id="searchKeyBox"></textbox>
+                    <button id="searchClassifierButton" label="查询"></button>
+                </toolbar>
+                <listbox id="classifierListBox" mold="paging" visible="true" multiple="true">
+                    <listhead>
+                        <listheader label="分类ID"></listheader>
+                        <listheader label="IP"></listheader>
+                        <listheader label="与聚类中心距离"></listheader>
+                    </listhead>
+                    <template name="model">
+                        <listitem value="${each}">
+                            <listcell>
+                                <label value="${each.classifierKey}"></label>
+                            </listcell>
+                            <listcell label="${each.classifierIp}">
+                            </listcell>
+                            <listcell>
+                                <label value="${each.classifierIpDis}"></label>
+                            </listcell>
+                        </listitem>
+                    </template>
+                </listbox>
+            </panelchildren>
+        </panel>
+    </window>
+</zk>
